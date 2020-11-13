@@ -1,0 +1,46 @@
+plugins {
+    id 'org.springframework.boot' version '2.3.5.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+    id 'java'
+// next line only for .war files
+    id 'war'
+}
+
+group = 'com.videotools'
+    // some kind of TLD is needed, or else tomcat is warning
+version = 'v1'
+    // this is not the source version, but the API version
+sourceCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+// next line only for .war files
+    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Run locally with the embedded tomcat:
+// - comment out id 'war' and providedRuntime '....starter-tomcat'
+// - gradle clean build bootRun
+// - curl http://localhost:8080/greeting?name=Joe | json_pp
+
+// Build deployable war file:
+// - don't comment out these two lines
+// - gradle clean build
+// - cp build/libs/streaming-api-v1.war ... (or upload via the tomcat manager)
+//   (exploding of war file should be done automatically, after the .war file is
+//   copied to /usr/share/tomcat/webapps/)
+// - curl http://localhost:8000/streaming-api-v1/greeting?name=Joe | json_pp
+
+// For each case:
+// one line in MainAppStreamingApi.java has to be modified
