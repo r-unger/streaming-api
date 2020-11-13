@@ -1,0 +1,10 @@
+DONE
+====
+- minimal GET /greeting functionality
+- both local testing with embedded tomcat
+  and remote tomcat .war deployment is working
+  (see the notes in build.gradle for the changes)
+
+TODO
+====
+
