@@ -1,0 +1,16 @@
+# project files
+/.project
+/.gradle
+
+# build files
+/build/tmp/
+/build/generated/
+/build/classes/
+# (but the other subdirs. are kept for delivery)
+
+# at the moment I don't need unit test resuts,
+# so don't commit them; later - with unit testing -
+# these test results should be committed
+/build/test-results/
+/build/reports/
+
