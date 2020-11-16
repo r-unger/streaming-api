@@ -1,0 +1,69 @@
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- Problem: Akka Logging does use this SLF4J logging configuration,
+                 but some lifecycle logging gets sent to STDOUT in a default pattern.
+                 Workaround: Adapt the SLF4J pattern below
+                 so that it matches the default Akka pattern.
+            -->
+                <pattern>[%level] [%date] [%thread] [%logger{10}] %msg%n</pattern>
+
+            <!-- Original Logback pattern:
+                <pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n</pattern>
+            -->
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/var/log/streaming-api/logfile.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover -->
+            <fileNamePattern>/var/log/streaming-api/logfile.%d{yyyy-MM-dd}.log</fileNamePattern>
+
+            <!-- keep 30 days' worth of history capped at 3GB total size -->
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="STDOUTDEV" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+                <pattern>[%level] [%date{HH:mm:ss.SSS}] [%thread] [%logger{0}] %msg%n</pattern>
+            <!-- Short output for better readability on the console
+            -->
+        </encoder>
+    </appender>
+
+    <!-- Logback defines 5 log levels: TRACE, DEBUG, INFO, WARN, ERROR (but TRACE is discouraged)
+         Akka has only these: DEBUG, INFO, WARN and ERROR
+    -->
+    <!-- Set the verbosity level for production here: -->
+    <root level="DEBUG">
+        <appender-ref ref="FILE" />
+    </root>
+    
+    <!-- Special output only on my vagrant machine -->
+    <if condition='property("HOSTNAME").contains("multisrv")'>
+        <then>
+            <root level="DEBUG">
+                <appender-ref ref="STDOUT" />
+            </root>
+        </then>
+    </if>
+    
+    <!-- Special output only on my dev machine -->
+    <if condition='property("HOSTNAME").contains("MacBook")'>
+        <then>
+            <root level="DEBUG">
+                <appender-ref ref="STDOUTDEV" />
+            </root>
+        </then>
+    </if>
+</configuration>
+
