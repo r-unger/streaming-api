@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.videotools.streamingapi;
+package com.videotools.streamingapi.rest;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -55,6 +55,4 @@ public class GreetingControllerTests {
                     .andExpect(jsonPath("$.content")
                             .value("Hello, Spring Community!"));
     }
-
 }
-
