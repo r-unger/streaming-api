@@ -9,5 +9,5 @@ public class MainAppStreamingApi {
     public static void main(String[] args) {
         SpringApplication.run(MainAppStreamingApi.class, args);
     }
-}
 
+}
