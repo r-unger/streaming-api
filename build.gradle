@@ -16,14 +16,32 @@ repositories {
     mavenCentral()
 }
 
+ext['akkaBinary'] = "2.13"
+ext['akkaVersion'] = "2.6.19"
+
 dependencies {
     // Spring Boot declarations
     implementation 'org.springframework.boot:spring-boot-starter-web'
-// next line only for .war files
+    implementation 'org.springframework.boot:spring-boot-starter-hateoas'
+    // next line only for .war files
     providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
+
+    // Project-specific
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.h2database:h2'
+    // https://mvnrepository.com/artifact/jakarta.persistence/jakarta.persistence-api
+    implementation group: 'jakarta.persistence', name: 'jakarta.persistence-api', version: '3.1.0'
+    // https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api
+    compileOnly group: 'jakarta.servlet', name: 'jakarta.servlet-api', version: '6.0.0'
+
+    // Apache Commons
+    // https://mvnrepository.com/artifact/commons-io/commons-io
+    implementation group: 'commons-io', name: 'commons-io', version: '2.11.+'
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-csv
+    implementation group: 'org.apache.commons', name: 'commons-csv', version: '1.9.+'
 
     // Logging: SLF4J + Logback
     // Tip: SLF4J 2.0 + Logback 1.3 (Java 9 modular) is in early development
@@ -39,6 +57,20 @@ dependencies {
     // https://mvnrepository.com/artifact/org.codehaus.janino/commons-compiler
     implementation group: 'org.codehaus.janino', name: 'commons-compiler', version: '3.1.+'
     // (both janino libraries are required by logback's if-then-else feature)
+
+    // Akka Actors
+    // https://mvnrepository.com/search?q=com.typesafe.akka
+    implementation group: 'com.typesafe.akka', name: "akka-actor_${akkaBinary}", version: "${akkaVersion}"
+    testImplementation group: 'com.typesafe.akka', name: "akka-testkit_${akkaBinary}", version: "${akkaVersion}"
+    // Akka Logging for SLF4J
+    // https://mvnrepository.com/artifact/com.typesafe.akka/akka-slf4j
+    implementation group: 'com.typesafe.akka', name: "akka-slf4j_${akkaBinary}", version: "${akkaVersion}"
+
+    // Jupiter tests
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.9.1'
+    // https://mvnrepository.com/artifact/org.junit.platform/junit-platform-launcher
+    testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher', version: '1.9.1'
 }
 
 test {
@@ -49,20 +81,3 @@ compileJava {
     options.encoding = 'UTF-8'
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
-
-
-// Run locally with the embedded tomcat:
-// - comment out id 'war' and providedRuntime '....starter-tomcat'
-// - gradle clean build bootRun
-// - curl http://localhost:8080/greeting?name=Joe | json_pp
-
-// Build deployable war file:
-// - don't comment out these two lines
-// - gradle clean build
-// - cp build/libs/streaming-api-v1.war ... (or upload via the tomcat manager)
-//   (exploding of war file should be done automatically, after the .war file is
-//   copied to /usr/share/tomcat/webapps/)
-// - curl http://localhost:8000/streaming-api-v1/greeting?name=Joe | json_pp
-
-// For each case:
-// one line in MainAppStreamingApi.java has to be modified
