@@ -12,42 +12,42 @@ public class Serverspot {
         // @Entity is a JPA annotation to make this object ready
         // for storage in a JPA-based data store
 
-    private @Id @GeneratedValue Long id;
-        // @Id @GeneratedValue: primary key and automatically populated
-        // by the JPA provider
-    private String name;
-    private String role;
+    private String hostname;
+    private String group;
+    private @Id int token;
+        // @Id: primary key
 
     public Serverspot() {}
 
-    public Serverspot(String name, String role) {
+    public Serverspot(String hostname, String group, int token) {
 
-        this.name = name;
-        this.role = role;
+        this.hostname = hostname;
+        this.group = group;
+        this.token = token;
     }
 
-    public Long getId() {
-        return this.id;
+    public String getHostname() {
+        return this.hostname;
     }
 
-    public String getName() {
-        return this.name;
+    public String getGroup() {
+        return group;
     }
 
-    public String getRole() {
-        return this.role;
+    public int getToken() {
+        return this.token;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setGroup(String group) {
+        this.group = group;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public void setToken(int token) {
+        this.token = token;
     }
 
     @Override
@@ -58,22 +58,22 @@ public class Serverspot {
         if (!(o instanceof Serverspot))
             return false;
         Serverspot serverspot = (Serverspot) o;
-        return Objects.equals(this.id, serverspot.id)
-            && Objects.equals(this.name, serverspot.name)
-            && Objects.equals(this.role, serverspot.role);
+        return Objects.equals(this.hostname, serverspot.hostname)
+            && Objects.equals(this.group, serverspot.group)
+            && Objects.equals(this.token, serverspot.token);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id, this.name, this.role);
+        return Objects.hash(this.hostname, this.group, this.token);
     }
 
     @Override
     public String toString() {
         return "Serverspot{" 
-                + "id=" + this.id 
-                + ", name='" + this.name + '\'' 
-                + ", role='" + this.role + '\'' + '}';
+                + "hostname='" + this.hostname + '\'' 
+                + ", group='" + this.group + '\'' 
+                + ", token='" + this.token + '\'' + '}';
     }
 
 }
