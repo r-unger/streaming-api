@@ -1,6 +1,6 @@
 plugins {
-    id 'org.springframework.boot' version '2.3.5.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.10.RELEASE'
+    id 'org.springframework.boot' version '3.1.11'
+    id 'io.spring.dependency-management' version '1.1.4'
     id 'java'
 // next line only for .war files
     id 'war'
@@ -10,7 +10,10 @@ group = 'com.videotools'
     // some kind of TLD is needed, or else tomcat is warning
 version = 'v1'
     // this is not the source version, but the API version
-sourceCompatibility = '1.8'
+
+java {
+    sourceCompatibility = '17'
+}
 
 repositories {
     mavenCentral()
@@ -73,7 +76,11 @@ dependencies {
     testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher', version: '1.9.1'
 }
 
-test {
+tasks.named('bootBuildImage') {
+    builder = 'paketobuildpacks/builder-jammy-base:latest'
+}
+
+tasks.named('test') {
     useJUnitPlatform()
 }
 
