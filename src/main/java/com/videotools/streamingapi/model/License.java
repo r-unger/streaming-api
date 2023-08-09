@@ -12,42 +12,52 @@ public class License {
         // @Entity is a JPA annotation to make this object ready
         // for storage in a JPA-based data store
 
-    private @Id @GeneratedValue Long id;
-        // @Id @GeneratedValue: primary key and automatically populated
-        // by the JPA provider
-    private String name;
-    private String role;
-
+    private @Id int token;
+        // @Id: primary key
+    private String asset;
+    private String status;
+    private long leaseTime;
+        // TODO: either only renew or pause->onhold, replay->reactivate
+    
     public License() {}
 
-    public License(String name, String role) {
-
-        this.name = name;
-        this.role = role;
+    public License(int token, String asset, String status, int leaseTime) {
+        this.token = token;
+        this.asset = asset;
+        this.status = status;
+        this.leaseTime = leaseTime;
     }
 
-    public Long getId() {
-        return this.id;
+    public int getToken() {
+        return token;
     }
 
-    public String getName() {
-        return this.name;
+    public void setToken(int token) {
+        this.token = token;
     }
 
-    public String getRole() {
-        return this.role;
+    public String getAsset() {
+        return asset;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setAsset(String asset) {
+        this.asset = asset;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getStatus() {
+        return status;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public long getLeaseTime() {
+        return leaseTime;
+    }
+
+    public void setLeaseTime(long leaseTime) {
+        this.leaseTime = leaseTime;
     }
 
     @Override
@@ -58,22 +68,24 @@ public class License {
         if (!(o instanceof License))
             return false;
         License license = (License) o;
-        return Objects.equals(this.id, license.id)
-            && Objects.equals(this.name, license.name)
-            && Objects.equals(this.role, license.role);
+        return Objects.equals(this.token, license.token)
+            && Objects.equals(this.asset, license.asset)
+            && Objects.equals(this.status, license.status)
+            && Objects.equals(this.leaseTime, license.leaseTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.id, this.name, this.role);
+        return Objects.hash(this.token, this.asset, this.status, this.leaseTime);
     }
 
     @Override
     public String toString() {
         return "License{" 
-                + "id=" + this.id 
-                + ", name='" + this.name + '\'' 
-                + ", role='" + this.role + '\'' + '}';
+                + "token=" + this.token 
+                + ", asset='" + this.asset + '\'' 
+                + ", status='" + this.status + '\'' 
+                + ", leaseTime='" + this.leaseTime + '\'' + '}';
     }
 
 }
