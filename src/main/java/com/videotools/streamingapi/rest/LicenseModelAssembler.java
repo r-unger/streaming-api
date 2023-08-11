@@ -18,9 +18,7 @@ class LicenseModelAssembler
 
         return EntityModel.of(license,
                 linkTo(methodOn(LicenseController.class)
-                        .one(license.getId())).withSelfRel(),
-                linkTo(methodOn(LicenseController.class)
-                        .all()).withRel("licenses"));
+                        .one(license.getToken())).withSelfRel());
     }
 
 }

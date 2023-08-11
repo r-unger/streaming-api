@@ -19,9 +19,7 @@ public class ServerspotModelAssembler
 
         return EntityModel.of(serverspot,
                 linkTo(methodOn(ServerspotController.class)
-                        .one(serverspot.getId())).withSelfRel(),
-                linkTo(methodOn(ServerspotController.class)
-                        .all()).withRel("serverspots"));
+                        .one(serverspot.getToken())).withSelfRel());
     }
 
 }
