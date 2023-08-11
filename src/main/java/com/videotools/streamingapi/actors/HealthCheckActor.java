@@ -13,15 +13,18 @@ import akka.event.LoggingAdapter;
 import akka.japi.pf.ReceiveBuilder;
 import com.videotools.streamingapi.model.StreamerCapacity;
 import com.videotools.streamingapi.model.SyncedStreamerInfo;
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.commons.io.FileUtils;
 
 /**
  *
@@ -35,10 +38,12 @@ public class HealthCheckActor extends AbstractActorWithTimers {
     }
 
     // Actor messages
+    // Standard message to ping the actor and see some reaction in the log file
     static public class AreYouResponsive {
         public AreYouResponsive() {
         }
     }
+    // Message to trigger the internal loop
     static public class HealthCheckLoop {
         public HealthCheckLoop() {
         }
@@ -53,6 +58,17 @@ public class HealthCheckActor extends AbstractActorWithTimers {
     
     private final SyncedStreamerInfo streamerInfo;
     
+    // health recordings
+    private Instant sinceWhen;
+    private List<Long> maxAge;
+    private List<Boolean> onHold;
+        // both arrays are accessed with their index at
+        // streamerInfo.getCopyOfStreamerCapList()
+        // maxAge/onHold are NOT part of StreamerCapacity,
+        // because they are only for temporary statistics
+        // Hint: when the count & order of the StreamerCapList changes,
+        // then the order of these lists are also off
+    
     protected HealthCheckActor() {
         
         logger = Logging.getLogger(getContext().getSystem(), this);
@@ -65,6 +81,11 @@ public class HealthCheckActor extends AbstractActorWithTimers {
         streamerInfo = ActorSingleton.getInstance()
                 .getSyncedStreamerInfo();
         
+        // init health recordings
+        resetHealthRecordings(5);
+                // to start with, it's 5 streamers;
+                // if more are needed, they're added
+        
         actorReceiveBlt =
                 receiveBuilder()
                 .match(AreYouResponsive.class, areYouResponsive -> {
@@ -76,27 +97,23 @@ public class HealthCheckActor extends AbstractActorWithTimers {
                 });
     }
 
-    private void loadStreamerCapacities() {
-        
-        // TODO: later from mySQL DB, ReST API, ...?
-        // as of now, from csv file in the format
-        // www1.eucharisticflame.tv, 100, 140, 3
-        
-        // plus: check stream on nfsshare!
-        // IMPT: when run on several servers, have some communication
-        // prdmain1 should do all the health checks (since it can access nfs.../me)
-        // and report them also to prdmainX
-        
+    private void resetHealthRecordings(int numberOfStreamers) {
+        sinceWhen = Instant.MAX;
+        maxAge = new ArrayList<>();
+        onHold = new ArrayList<>();
+        for (int i = 0; i < numberOfStreamers; i++) {
+            maxAge.add(0L);
+            onHold.add(false);
+        }
     }
     
-    private boolean liveStreamHealthy(String hostname) {
+    private boolean liveStreamHealthy(String urlStr, int i) {
         
         boolean healthy = false;
+        long lastModSince = 0;
+        
         try {
-            String protocol = "https";
-            String resource = "/play/livestream.m3u8";
-            
-            URL url = new URL(protocol, hostname, resource);
+            URL url = new URL(urlStr);
             // can throw a MalformedURLException
             // (i.e. the inputName possibly has a typo)
             HttpURLConnection httpCon
@@ -110,18 +127,18 @@ public class HealthCheckActor extends AbstractActorWithTimers {
             if ((httpCode == 200) || (httpCode == 206) || (httpCode == 304)) {
                 // resource is okay, so proceed
                 long lastModified = httpCon.getHeaderFieldDate("Last-Modified", 0);
-                long dur = Instant.now().toEpochMilli() - lastModified;
-                if (dur < 0) {
+                lastModSince = Instant.now().toEpochMilli() - lastModified;
+                if (lastModSince < 0) {
                     logger.error("lastModified is in the future");
-                } else if (dur > 24*60*60*1000) {
+                } else if (lastModSince > 24*60*60*1000) {
                     logger.error("lastModified is in more than a day old");
                 }
                 
-                if (dur < 15000) { // < 15 seconds
+                if (lastModSince < 15000) { // < 15 seconds
                     healthy = true;
                 } else {
                     logger.warning("Resource {} is {} old",
-                            url.toExternalForm(), Duration.ofMillis(dur).toString());
+                            url.toExternalForm(), Duration.ofMillis(lastModSince).toString());
                 }
             } else {
                 // some server error, possibly 404 (not found)
@@ -130,13 +147,35 @@ public class HealthCheckActor extends AbstractActorWithTimers {
                         + "' connection with HTTP error code " + httpCode);
             }
         } catch (MalformedURLException ex) {
-            logger.error("URL for accessing {} is not correct; {}",
-                    hostname, ex.getMessage());
+            logger.error("URL {} is not correct; {}",
+                    urlStr, ex.getMessage());
         } catch (IOException ex) {
             // report a StreamerCapacity.Status.ONHOLD
             logger.debug("Network error while connecting to {}; {}",
-                    hostname, ex.getMessage());
+                    urlStr, ex.getMessage());
             // no need to log that error (only for debugging)
+        }
+        
+        if (!healthy) {
+            // resize lists, if too short
+            if (maxAge.size() < i+1) {
+                int oldSize = maxAge.size();
+                for (int j = oldSize; j < i+1; j++) {
+                    maxAge.add(0L);
+                    onHold.add(false);
+                }
+            }
+            // set the info
+            if (sinceWhen == Instant.MAX) {
+                sinceWhen = Instant.now();
+            }
+            if (lastModSince == 0) {
+                // means that some exceptions was caught
+                maxAge.set(i, 999999L);
+            } else if (maxAge.get(i) < lastModSince) {
+                maxAge.set(i, lastModSince);
+            }
+            onHold.set(i, true);
         }
         
         return healthy;
@@ -149,14 +188,43 @@ public class HealthCheckActor extends AbstractActorWithTimers {
         streamerInfo.updateStreamersFromFile();
         
         // for all found streamers ...
+        boolean allHealthy = true;
         Object[] streamers = streamerInfo.getCopyOfStreamerCapList();
-        for (Object o: streamers) {
-            StreamerCapacity cap = (StreamerCapacity)o;
-            if (!liveStreamHealthy(cap.getHostname())) {
+        // classical for-loop, because I need the index i
+        for (int i = 0; i < streamers.length; i++) {
+            StreamerCapacity cap = (StreamerCapacity)(streamers[i]);
+            String protocol = "https";
+            String resource = "/play/livestream.m3u8";
+            String urlStr = protocol + "://" + cap.getHostname() + resource;
+            if (!liveStreamHealthy(urlStr, i)) {
                 cap.setStatus(StreamerCapacity.Status.ONHOLD);
+                allHealthy = false;
             } else {
                 cap.setStatus(StreamerCapacity.Status.WORKING);
             }
+        }
+        
+        if ((allHealthy) && (sinceWhen != Instant.MAX)) {
+            // this means that they're healthy now,
+            // but some recordings were gathered
+            String statsFilename = "/var/log/tomcat9/health_incidents.csv";
+            StringBuilder statsLine = new StringBuilder();
+            statsLine.append(sinceWhen.toString()).append(", ");
+            // onHold isn't needed, since healthy streamers have maxAge 0
+            maxAge.forEach((age) -> statsLine.append(age/1000.0).append(", "));
+            try {
+                File statsFile = new File(statsFilename);
+                FileUtils.writeStringToFile(statsFile,
+                        statsLine.append(System.lineSeparator()).toString(),
+                        Charset.forName("UTF-8"),
+                        true); // append
+            } catch (IOException ex) {
+                logger.error(ex.getMessage());
+                logger.error("Could not write stats to {}", statsFilename);
+            }
+            
+            // reset everything (esp. sinceWhen = Instant.MAX)
+            resetHealthRecordings(streamers.length);
         }
     }
     
