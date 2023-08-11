@@ -32,10 +32,12 @@ public class LeaseStatsActor extends AbstractActorWithTimers {
     }
 
     // Actor messages
+    // Standard message to ping the actor and see some reaction in the log file
     static public class AreYouResponsive {
         public AreYouResponsive() {
         }
     }
+    // The real work messages
     static public class RegisterServerspot {
         private final Serverspot serverspot;
         private final String ipAddress;
@@ -52,11 +54,7 @@ public class LeaseStatsActor extends AbstractActorWithTimers {
             this.token = token;
         }
     }
-// TODO: update the leaseTime; either correct doTheStatsLoop() or just report in that same frequency
-//          letting grafana do the average
-// TODO: report current workload for /serverspots; perhaps in another actor with its own mail queue
-//          new idea: have that map as a concurrent & singleton, so that the ReST servlet doesn't have
-//          to wait on message processing
+    // Message to trigger the internal loop
     static public class StatsLoop {
         public StatsLoop() {
         }
@@ -112,17 +110,12 @@ public class LeaseStatsActor extends AbstractActorWithTimers {
         // remove old (stale) leases)
         leaseStatsData.removeStaleLeases();
         // (perhaps put them on hold for x days; or save them to file)
-// TODO: to avoid very old lease renewals, the lease must reclaim a new serverspot after some elapsed time
         
         // calc. the stats
         String statsFilename = "/var/log/streaming-api/stats_table.txt";
         StringBuilder statsLine = new StringBuilder();
         statsLine.append(LocalTime.now().toString()).append(" - ");
-// group?
-// 2 kinds of stats:
-// workload incl. those what reserved, but didn't .play
-// usage only those with more than a minute playtime
-        leaseStatsData.getServerWorkload().forEach((hostname, count)
+        leaseStatsData.getStreamerWorkloads().forEach((hostname, count)
                 -> statsLine.append(hostname).append(": ")
                             .append(count).append(", "));
         statsLine.append("removed but active: ").append(leaseStatsData.getRemovedLeaseCounter());
