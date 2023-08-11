@@ -86,7 +86,7 @@ public class LicenseController {
     }
     /* Response body:
         HTTP/1.1 201 (created)
-        Location: http://localhost:8080/licenses/4
+        Location: https://api.thecompany.com/streaming-api-v1/licenses/4
         Content-Type: application/hal+json
     */
 
