@@ -9,7 +9,7 @@ package com.videotools.streamingapi.rest;
 */
 // TODO: Links are working, even with Apache httpd as proxy,
 // but they show http instead of https
-// http://api.eucharisticflame.tv/streaming-api-v1/employees
+// http://api.thecompany.com/streaming-api-v1/employees
 // (but any client should follow links anyway)
 
 import com.videotools.streamingapi.model.EmployeeRepository;
