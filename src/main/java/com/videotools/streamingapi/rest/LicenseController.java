@@ -41,16 +41,11 @@ public class LicenseController {
         // will be written straight into the response body instead of
         // rendering a template
 
-    private final LicenseRepository repository;
     private final LicenseModelAssembler assembler;
 
     LicenseController(
-            LicenseRepository repository,
             LicenseModelAssembler assembler) {
 
-        // LicenseRepository and the Assembler are injected
-        // by constructor into the controller
-        this.repository = repository;
         this.assembler = assembler;
     }
 
