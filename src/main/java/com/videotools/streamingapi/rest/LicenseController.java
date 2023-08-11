@@ -9,13 +9,15 @@ package com.videotools.streamingapi.rest;
 */
 // TODO: Links are working, even with Apache httpd as proxy,
 // but they show http instead of https
-// http://api.eucharisticflame.tv/streaming-api-v1/licenses
+// http://api.thecompany.com/streaming-api-v1/licenses
 // (but any client should follow links anyway)
 
+import akka.actor.ActorRef;
+import com.videotools.streamingapi.actors.ActorSingleton;
+import com.videotools.streamingapi.actors.LeaseStatsActor;
 import com.videotools.streamingapi.model.LicenseRepository;
 import com.videotools.streamingapi.model.License;
-import java.util.List;
-import java.util.stream.Collectors;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
@@ -29,9 +31,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
@@ -41,14 +42,13 @@ public class LicenseController {
         // rendering a template
 
     private final LicenseRepository repository;
-
     private final LicenseModelAssembler assembler;
 
     LicenseController(
             LicenseRepository repository,
             LicenseModelAssembler assembler) {
 
-        // the LicenseRepository and the Assembler are injected
+        // LicenseRepository and the Assembler are injected
         // by constructor into the controller
         this.repository = repository;
         this.assembler = assembler;
@@ -59,23 +59,30 @@ public class LicenseController {
     @GetMapping("/licenses")
     CollectionModel<EntityModel<License>> all() {
 
-        List<EntityModel<License>> licenses =
-                repository
-                        .findAll()
-                        .stream()
-                        .map(assembler::toModel)
-                        .collect(Collectors.toList());
-
-        return CollectionModel.of(licenses,
-                linkTo(methodOn(LicenseController.class)
-                        .all()).withSelfRel());
+        throw new ResourceForbiddenException("/licenses/");
     }
 
+    // correct call:
+    // curl -X POST -H 'Content-Type: application/json' -d '{}'
+    //'https://api.thecompany.com/streaming-api-v1/licenses?token=23&asset=file'
     @PostMapping("/licenses")
-    ResponseEntity<?> newLicense(@RequestBody License newLicense) {
+    ResponseEntity<?> newLicense(
+            @RequestParam(value="token", defaultValue="", required=true) Integer token,
+            @RequestParam(value="asset", defaultValue="") String asset,
+            HttpServletRequest request) {
+        
+        String status = "";
+        int leaseTime = 60000;
+        
+        License newLicense = new License(token, asset, status, leaseTime);
+
+        // inform the statsActor
+        ActorRef statsActor = ActorSingleton.getInstance().getStatsActor();
+        statsActor.tell(new LeaseStatsActor.AddDataPoint(token),
+                ActorRef.noSender());
 
         EntityModel<License> entityModel =
-                assembler.toModel(repository.save(newLicense));
+                assembler.toModel(newLicense);
 
         return ResponseEntity
                 .created(entityModel
@@ -87,58 +94,45 @@ public class LicenseController {
         Location: http://localhost:8080/licenses/4
         Content-Type: application/hal+json
     */
-    // but better would be: Content-Type: application/hal+json;charset=UTF-8
 
     // Single item
 
-    @GetMapping("/licenses/{id}")
-    EntityModel<License> one(@PathVariable Long id) {
+    @GetMapping("/licenses/{token}")
+    EntityModel<License> one(@PathVariable Integer token) {
 
-        License license = repository.findById(id)
-                .orElseThrow(() -> new LicenseNotFoundException(id));
-
-        return assembler.toModel(license);
+        throw new ResourceForbiddenException("/licenses/" + token);
     }
 
-    @PutMapping("/licenses/{id}")
-    ResponseEntity<?> replaceLicense(
+    // correct call:
+    //  curl -X PUT -H 'Content-Type: application/json' -d
+    // '{"token":234,"asset":"file","status":"","leaseTime":60000}'
+    // 'https://api.thecompany.com/streaming-api-v1/licenses/234'
+    @PutMapping("/licenses/{token}")
+    ResponseEntity<?> updateLicense(
             @RequestBody License newLicense,
-            @PathVariable Long id) {
-            // replace is a better description than update; e.g. if the name
-            // was NOT provided, it would instead get nulled out
+            @PathVariable Integer token) {
 
-        License updatedLicense = repository.findById(id)
-                .map(license -> {
-                    license.setName(newLicense.getName());
-                    license.setRole(newLicense.getRole());
-                    return repository.save(license);
-                })
-                .orElseGet(() -> {
-                    newLicense.setId(id);
-                    return repository.save(newLicense);
-                });
-                // Remark: A PUT with an unknown id still saves that record,
-                // but discards the id. Instead, an incremented id is issued.
-                // curl -X PUT localhost:8080/licenses/98
-                // -H 'Content-type:application/json'
-                // -d '{"id": 98, "name": "S. G.", "role": "other"}'
-                // gives the record the next available id, n+1 (and not 98)
+        License updatedLicense = newLicense;
 
-        EntityModel<License> entityModel = assembler.toModel(updatedLicense);
+        // inform the statsActor
+        ActorRef statsActor = ActorSingleton.getInstance().getStatsActor();
+        statsActor.tell(new LeaseStatsActor.AddDataPoint(token),
+                ActorRef.noSender());
+
+        EntityModel<License> entityModel =
+                assembler.toModel(updatedLicense);
 
         return ResponseEntity
                 .created(entityModel
                         .getRequiredLink(IanaLinkRelations.SELF).toUri())
                 .body(entityModel);
     }
-    /* same response body as newLicense() above */
+    /* same response body as with newLicense() above */
 
-    @DeleteMapping("/licenses/{id}")
-    ResponseEntity<?> deleteLicense(@PathVariable Long id) {
+    @DeleteMapping("/licenses/{token}")
+    ResponseEntity<?> deleteLicense(@PathVariable Integer token) {
 
-        repository.deleteById(id);
-
-        return ResponseEntity.noContent().build();
+        throw new ResourceForbiddenException("/licenses/" + token);
     }
     /* Response body:
         HTTP/1.1 204 (no content; which means:
