@@ -6,12 +6,13 @@
 package com.videotools.streamingapi.actors;
 
 import com.videotools.streamingapi.model.Serverspot;
+import com.videotools.streamingapi.model.StreamerCapacity;
+import com.videotools.streamingapi.model.SyncedStreamerInfo;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  *
@@ -41,9 +42,7 @@ public class LeaseStatsData {
     private final Map<Integer, Lease> activeLeases;
     private final Map<Integer, Lease> staleLeases;
         // key: token
-    private final Map<String, Integer> serverWorkload;
-        // key: hostname
-// TODO: must be a concurrent map as singleton, so that the API can access it
+    private final SyncedStreamerInfo streamerInfo;
     private int removedLeaseCounter;
         // counts the dataPoints where the leaf was removed from the two maps
     
@@ -51,26 +50,30 @@ public class LeaseStatsData {
         
         activeLeases = new HashMap<>(HASH_INITIALCAP);
         staleLeases = new HashMap<>(HASH_INITIALCAP);
-        serverWorkload = new TreeMap<>();
+        streamerInfo = ActorSingleton.getInstance().getSyncedStreamerInfo();
         removedLeaseCounter = 0;
     }
     
     private void incWorkloadCounter(String hostname) {
         
-        Integer old = serverWorkload.getOrDefault(hostname, 0);
-            // if hostname wasn't there, get 0
-        serverWorkload.put(hostname, old+1);
-            // if hostname wasn't there, add new instead of replace
+        StreamerCapacity cap = streamerInfo.getStreamerCapacity(hostname);
+        if (cap != null) {
+            cap.incCurrentWorkload();
+        }
+        // ignore, if StreamerCapacity not found
+        // (perhaps it was removed from the configuration csv file
+        // while still in use)
     }
     
     private void decWorkloadCounter(String hostname) {
         
-        Integer old = serverWorkload.getOrDefault(hostname, 0);
-            // if hostname wasn't there, get 0
-        serverWorkload.put(hostname, Math.max(old-1, 0));
-            // if hostname wasn't there, add new instead of replace
-            // negative counts shouldn't be there,
-            // but just in case, don't decrease below 0
+        StreamerCapacity cap = streamerInfo.getStreamerCapacity(hostname);
+        if (cap != null) {
+            cap.decCurrentWorkload();
+        }
+        // ignore, if StreamerCapacity not found
+        // (perhaps it was removed from the configuration csv file
+        // while still in use)
     }
     
     public void registerServerspot(Serverspot serverspot, String ipAddress) {
@@ -175,8 +178,21 @@ public class LeaseStatsData {
         
     }
 
-    public Map<String, Integer> getServerWorkload() {
-        return serverWorkload;
+    public Map<String, Integer> getStreamerWorkloads() {
+        return streamerInfo.getCopyOfStreamerWorkloads();
+    }
+
+    public Integer getWorkloadOfStreamer(String hostname) {
+        
+        Integer workload = 0;
+        StreamerCapacity cap = streamerInfo.getStreamerCapacity(hostname);
+        if (cap != null) {
+            cap.getCurrentWorkload();
+        }
+        // return 0 if StreamerCapacity not found
+        // (perhaps it was removed from the configuration csv file
+        // while still in use)
+        return workload;
     }
 
     public void resetRemovedLeaseCounter() {
