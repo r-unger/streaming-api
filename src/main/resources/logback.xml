@@ -16,10 +16,10 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/streaming-api/logfile.log</file>
+        <file>${catalina.base}/logs/streaming-api.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover -->
-            <fileNamePattern>/var/log/streaming-api/logfile.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${catalina.base}/logs/streaming-api.%d{yyyy-MM-dd}.log</fileNamePattern>
 
             <!-- keep 30 days' worth of history capped at 3GB total size -->
             <maxHistory>30</maxHistory>
@@ -28,7 +28,7 @@
         </rollingPolicy>
 
         <encoder>
-            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+            <pattern>[%level] [%date] [%thread] [%logger{10}] %msg%n</pattern>
         </encoder>
     </appender>
 
@@ -44,21 +44,12 @@
          Akka has only these: DEBUG, INFO, WARN and ERROR
     -->
     <!-- Set the verbosity level for production here: -->
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="FILE" />
     </root>
     
-    <!-- Special output only on my vagrant machine -->
-    <if condition='property("HOSTNAME").contains("multisrv")'>
-        <then>
-            <root level="DEBUG">
-                <appender-ref ref="STDOUT" />
-            </root>
-        </then>
-    </if>
-    
-    <!-- Special output only on my dev machine -->
-    <if condition='property("HOSTNAME").contains("MacBook")'>
+    <!-- Special output only on my dev machine (having the word 'Mini' in it's name -->
+    <if condition='property("HOSTNAME").contains("Mini")'>
         <then>
             <root level="DEBUG">
                 <appender-ref ref="STDOUTDEV" />
@@ -66,4 +57,3 @@
         </then>
     </if>
 </configuration>
-
