@@ -1,11 +1,19 @@
-# project files
+# ignore Gradle project-specific cache directory
+.gradle
+# ignore GitEye project file
 /.project
-/.gradle
+# ignore NetBeans project files
+/.nb-gradle/
+# macOS files
+.DS_Store
 
-# build files
+# build files to ignore
 /build/tmp/
 /build/generated/
 /build/classes/
+/build/resources/
+/build/exploded/
+/build/resolvedMainClassName
 # (but the other subdirs. are kept for delivery)
 
 # at the moment I don't need unit test resuts,
