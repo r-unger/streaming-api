@@ -97,6 +97,10 @@ public class ServerspotController {
             // a bit less than the other cloud instances, because of SQL, influxDB, grafana
         StreamerCapacity[] streamers = new StreamerCapacity[]
                 {pm1, pm2, sat1, sat2, pa1 };
+        // this array represents the config. file to be found in the repo at
+        // doc/example_streamerinfo.csv
+        // which should be placed on the server at
+        // /etc/streaming-api/streamerinfo.csv
         */
         Object[] streamers = ActorSingleton.getInstance()
                 .getSyncedStreamerInfo()
