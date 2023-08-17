@@ -4,7 +4,14 @@ DONE
 - both local testing with embedded tomcat
   and remote tomcat .war deployment is working
   (see the notes in build.gradle for the changes)
+- added SLF4J logging (to /var/log/...)
+- implemented the /serverspots functionality
+- implemented the /licenses functionality
+- added HATEOAS links to all API responses
+- complete coverage of all ReST verbs as implemented for /serverspots
 
 TODO
 ====
 
+- JavaDoc
+- add more explanation to the README.md
