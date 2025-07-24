@@ -16,7 +16,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
 @SpringBootTest
 @AutoConfigureMockMvc
 public class ServerspotControllerTests {
@@ -25,23 +24,23 @@ public class ServerspotControllerTests {
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper mapper;
-    
+
     @Test
     public void getAllShouldBeForbidden() throws Exception {
 
         this.mockMvc.perform(
                 get("/serverspots"))
-                    .andDo(print())
-                    .andExpect(status().isForbidden());
+                .andDo(print())
+                .andExpect(status().isForbidden());
         // if a list of all items should be returned, then
-//        this.mockMvc.perform(
-//                get("/serverspots"))
-//                    .andDo(print())
-//                    .andExpect(status().isOk())
-//                    .andExpect(jsonPath("$._embedded.serverspotList[0].group")
-//                            .value("abc"))
-//                    .andExpect(jsonPath("$._embedded.serverspotList[1].group")
-//                            .value("xyz"));
+        // this.mockMvc.perform(
+        // get("/serverspots"))
+        // .andDo(print())
+        // .andExpect(status().isOk())
+        // .andExpect(jsonPath("$._embedded.serverspotList[0].group")
+        // .value("abc"))
+        // .andExpect(jsonPath("$._embedded.serverspotList[1].group")
+        // .value("xyz"));
     }
 
     @Test
@@ -49,8 +48,8 @@ public class ServerspotControllerTests {
 
         this.mockMvc.perform(
                 get("/serverspots/{id}", 1234))
-                    .andDo(print())
-                    .andExpect(status().isForbidden());
+                .andDo(print())
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -58,9 +57,13 @@ public class ServerspotControllerTests {
 
         this.mockMvc.perform(
                 post("/serverspots"))
-                    .andDo(print())
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.token").exists());
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(status().isForbidden());
+        /*
+         * try out a test that must fail; ignore the working line:
+         * .andExpect(jsonPath("$.token").exists());
+         */
     }
 
     @Test
@@ -70,12 +73,12 @@ public class ServerspotControllerTests {
                 put("/serverspots/{id}", 1234)
                         .content(mapper.writeValueAsString(
                                 new Serverspot(
-                                        "www1.thecompany.com", 
-                                        "live.eftv", 
+                                        "www1.thecompany.com",
+                                        "live.eftv",
                                         1234)))
                         .contentType(MediaType.APPLICATION_JSON))
-                    .andDo(print())
-                    .andExpect(status().isForbidden());
+                .andDo(print())
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -83,8 +86,8 @@ public class ServerspotControllerTests {
 
         this.mockMvc.perform(
                 delete("/serverspots/{id}", 1234))
-                    .andDo(print())
-                    .andExpect(status().isForbidden());
+                .andDo(print())
+                .andExpect(status().isForbidden());
     }
 
 }
