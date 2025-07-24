@@ -59,11 +59,7 @@ public class ServerspotControllerTests {
                 post("/serverspots"))
                 .andDo(print())
                 .andExpect(status().isCreated())
-                .andExpect(status().isForbidden());
-        /*
-         * try out a test that must fail; ignore the working line:
-         * .andExpect(jsonPath("$.token").exists());
-         */
+                .andExpect(jsonPath("$.token").exists());
     }
 
     @Test
