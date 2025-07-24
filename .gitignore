@@ -8,6 +8,7 @@
 .DS_Store
 
 # build files to ignore
+/bin/
 /build/tmp/
 /build/generated/
 /build/classes/
