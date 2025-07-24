@@ -22,3 +22,5 @@
 /build/test-results/
 /build/reports/
 
+# artifacts from test runs
+/catalina.base_IS_UNDEFINED/
